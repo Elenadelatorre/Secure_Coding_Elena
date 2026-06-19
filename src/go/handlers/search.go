@@ -1,33 +1,34 @@
 // src/go/handlers/search.go
 // PASO 13: ReDoS — regex seguro y longitud maxima de input
 
+// CODIGO SEGURO
 package handlers
 
 import (
-	"net/http"
-	"regexp"
+    "net/http"
+    "regexp"
 )
 
-// VULNERABLE (punto de inicio del ejercicio):
-// var emailPattern = regexp.MustCompile(`^(([a-zA-Z]+)+)@example\.com$`)
-//
-// func SearchHandler(w http.ResponseWriter, r *http.Request) {
-//     input := r.URL.Query().Get("q")
-//     if emailPattern.MatchString(input) {
-//         w.Write([]byte("valid"))
-//     }
-// }
-//
-// El patron (([a-zA-Z]+)+) tiene backtracking catastrofico: para un input como
-// "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaX" el motor de regex explora un numero
-// exponencial de combinaciones, bloqueando el servidor durante segundos o minutos.
-// Esto es suficiente para un ataque de denegacion de servicio con pocas peticiones.
+const maxInputLength = 254  // longitud maxima de email segun RFC 5321
 
-var emailPattern = regexp.MustCompile(`^(([a-zA-Z]+)+)@example\.com$`)
+// Patron lineal: sin cuantificadores anidados, sin alternaciones con prefijo comun
+// [a-zA-Z0-9._%+\-]+ matchea una vez por caracter, sin posibilidad de repartir
+var safeEmailPattern = regexp.MustCompile(
+    `^[a-zA-Z0-9._%+\-]+@example\.com$`,
+)
 
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
-	input := r.URL.Query().Get("q")
-	if emailPattern.MatchString(input) {
-		w.Write([]byte("valid"))
-	}
+    input := r.URL.Query().Get("q")
+
+    // Limitar longitud antes de evaluar la regex
+    if len(input) > maxInputLength {
+        http.Error(w, "Input too long", http.StatusBadRequest)
+        return
+    }
+
+    if safeEmailPattern.MatchString(input) {
+        w.Write([]byte("valid"))
+    } else {
+        w.Write([]byte("invalid"))
+    }
 }
