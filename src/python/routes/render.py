@@ -1,24 +1,18 @@
 # src/python/routes/render.py
 # PASO 3: Server-Side Template Injection (SSTI) — template fijo con autoescaping habilitado
 
+# CODIGO SEGURO
+from jinja2 import Environment, select_autoescape
 from fastapi import APIRouter
-from jinja2 import Template
 
 router = APIRouter()
 
-# VULNERABLE (punto de inicio del ejercicio):
-# from jinja2 import Template
-#
-# @router.get("/greet")
-# async def greet(name: str):
-#     template = Template(f"Hola {name}!")
-#     return {"message": template.render()}
-#
-# Un atacante puede enviar: name={{ 7*7 }} y obtenera "Hola 49!"
-# Con: name={{ config.__class__.__init__.__globals__['os'].popen('id').read() }}
-# el atacante ejecuta comandos arbitrarios en el servidor.
+# El template es una constante definida por el desarrollador, nunca por el usuario
+GREETING_TEMPLATE = "Hola {{ name }}!"
+
+env = Environment(autoescape=select_autoescape(["html", "xml"]))
 
 @router.get("/greet")
 async def greet(name: str):
-    template = Template(f"Hola {name}!")
-    return {"message": template.render()}
+    template = env.from_string(GREETING_TEMPLATE)
+    return {"message": template.render(name=name)}  # name es un dato, no sintaxis
