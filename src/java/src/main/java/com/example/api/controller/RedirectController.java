@@ -3,12 +3,14 @@
 
 package com.example.api.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-// CODIGO SEGURO
+import java.util.List;
+
 @Controller
 @RequestMapping("/auth")
 public class RedirectController {
@@ -21,10 +23,9 @@ public class RedirectController {
     );
 
     @GetMapping("/login")
-    public String login(@RequestParam(defaultValue = "/dashboard") String next) {
-        // Solo redirigir a rutas internas de la allowlist
+    public Object login(@RequestParam(defaultValue = "/dashboard") String next) {
         if (!ALLOWED_REDIRECTS.contains(next)) {
-            return "redirect:/dashboard";  // destino seguro por defecto
+            return ResponseEntity.badRequest().body("Destino de redirección no permitido");
         }
         return "redirect:" + next;
     }
