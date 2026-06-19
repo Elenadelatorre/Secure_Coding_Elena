@@ -1,7 +1,6 @@
 // src/go/handlers/headers.go
 // PASO 11: HTTP Header Injection — sanitizar valores de cabecera antes de escribirlos
 
-// CODIGO SEGURO
 package handlers
 
 import (
@@ -15,22 +14,18 @@ var allowedRedirects = map[string]bool{
 	"/profile":   true,
 }
 
-func sanitizeHeaderValue(value string) string {
-	value = strings.ReplaceAll(value, "\r", "")
-	value = strings.ReplaceAll(value, "\n", "")
-	return value
-}
-
 func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	next := r.URL.Query().Get("next")
-	sanitized := sanitizeHeaderValue(next)
 
-	// Por defecto usamos la ruta segura
+	// Usamos strings.ContainsAny para detectar intentos de HTTP Header Injection
+	if strings.ContainsAny(next, "\r\n") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	safe := "/home"
-
-	// Si está en la lista permitida, la usamos
-	if allowedRedirects[sanitized] {
-		safe = sanitized
+	if allowedRedirects[next] {
+		safe = next
 	}
 
 	w.Header().Set("Location", safe)
