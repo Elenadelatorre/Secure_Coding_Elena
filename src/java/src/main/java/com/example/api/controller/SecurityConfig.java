@@ -9,26 +9,24 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+// CODIGO SEGURO
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // VULNERABLE (punto de inicio del ejercicio):
-    // @Bean
-    // public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    //     http.csrf(csrf -> csrf.disable())
-    //         .authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
-    //     return http.build();
-    // }
-    //
-    // Sin CSRF, un sitio malicioso puede hacer que el navegador del usuario
-    // ejecute peticiones autenticadas (cambio de contrasena, transferencias)
-    // usando las cookies de sesion existentes sin que el usuario lo sepa.
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
+        http
+            // CSRF habilitado con token en cookie accesible al frontend del mismo origen
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/public/**").permitAll()
+                .anyRequest().authenticated()
+            );
         return http.build();
     }
 }
