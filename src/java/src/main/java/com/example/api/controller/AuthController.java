@@ -17,25 +17,22 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
-
-    // VULNERABLE (punto de inicio del ejercicio):
-    // @PostMapping("/login")
-    // public ResponseEntity<?> login(@RequestParam String username,
-    //                                @RequestParam String password) {
-    //     log.info("Login attempt for user: " + username);
-    //     ...
-    // }
-    //
-    // Un atacante puede enviar: username=admin\nINFO: Login successful for user: admin
-    // Esto inyecta una linea falsa en los logs que puede confundir a analistas
-    // o sistemas SIEM, ocultando actividad maliciosa real.
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String username,
-                                   @RequestParam String password) {
-        log.info("Login attempt for user: " + username);
-        // autenticar usuario...
-        return ResponseEntity.ok(Map.of("message", "OK"));
+    // CODIGO SEGURO
+private static String sanitizeForLog(String input) {
+    if (input == null) return "null";
+    // Eliminar caracteres de control (saltos de linea, tabuladores, etc.)
+    String sanitized = input.replaceAll("[\\r\\n\\t]", "_");
+    // Limitar longitud para evitar logs anormalmente largos
+    if (sanitized.length() > 100) {
+        sanitized = sanitized.substring(0, 100) + "[truncado]";
     }
+    return sanitized;
+}
+
+@PostMapping("/login")
+public ResponseEntity<?> login(@RequestParam String username,
+                               @RequestParam String password) {
+    // Usar logging parametrizado Y sanitizacion del input
+    log.info("Login attempt for user: {}", sanitizeForLog(username));
+    return ResponseEntity.ok(Map.of("message", "OK"));
 }
