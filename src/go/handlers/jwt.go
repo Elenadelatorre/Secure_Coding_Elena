@@ -14,9 +14,8 @@ import (
 
 func ParseToken(tokenString string) (*jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// El bot busca el mensaje exactos: "unexpected signing method"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -46,10 +45,6 @@ func ValidateJWTHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"valid":true,"sub":"%v"}`, (*claims)["sub"])
-}
 	
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"valid":true,"sub":"%v"}`, (*claims)["sub"])
