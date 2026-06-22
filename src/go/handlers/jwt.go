@@ -50,3 +50,7 @@ func ValidateJWTHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"valid":true,"sub":"%v"}`, (*claims)["sub"])
 }
+	
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{"valid":true,"sub":"%v"}`, (*claims)["sub"])
+}
