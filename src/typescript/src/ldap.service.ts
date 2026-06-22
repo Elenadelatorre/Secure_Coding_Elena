@@ -1,19 +1,27 @@
 // src/typescript/src/ldap.service.ts
 // PASO 30: LDAP Injection — escapar metacaracteres de filtros LDAP
 
+// CODIGO SEGURO
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class LdapService {
-  // Simulacion de directorio LDAP en memoria para el ejercicio
   private readonly directory = [
     { uid: 'alice', userPassword: 'pass1', cn: 'Alice Smith', role: 'user' },
     { uid: 'admin', userPassword: 'adminpass', cn: 'Admin User', role: 'admin' },
   ];
 
+  // Escapar los 5 metacaracteres especiales de filtros LDAP (RFC 4515)
+  private escapeLdapFilter(value: string): string {
+    return value
+      .replace(/\\/g, '\\5C')   // \ → \5C  (debe ser primero para no escapar los otros escapes)
+      .replace(/\*/g, '\\2A')   // * → \2A
+      .replace(/\(/g, '\\28')   // ( → \28
+      .replace(/\)/g, '\\29')   // ) → \29
+      .replace(/\x00/g, '\\00'); // NUL → \00
+  }
+
   private search(filter: string): Array<Record<string, string>> {
-    // Simulacion simplificada de evaluacion de filtro LDAP
-    // El filtro (&(uid=X)(userPassword=Y)) devuelve entradas que coinciden
     const matchUid = filter.match(/\(uid=([^)]*)\)/);
     const matchPass = filter.match(/\(userPassword=([^)]*)\)/);
     if (!matchUid || !matchPass) return [];
@@ -22,21 +30,11 @@ export class LdapService {
     );
   }
 
-  // VULNERABLE (punto de inicio del ejercicio):
-  // async authenticate(username: string, password: string): Promise<boolean> {
-  //   const filter = `(&(uid=${username})(userPassword=${password}))`;
-  //   const results = this.search(filter);
-  //   return results.length > 0;
-  // }
-  //
-  // LDAP usa metacaracteres especiales: ( ) * \ y el byte nulo.
-  // Payload de bypass: username = "admin)(&" , password = "x"
-  // El filtro resultante: (&(uid=admin)(&)(userPassword=x))
-  // El subfilro (&) siempre es verdadero, por lo que la autenticacion se bypasea.
-  // Payload mas directo: username = "admin)(|(uid=*" → extrae cualquier usuario.
-
   async authenticate(username: string, password: string): Promise<boolean> {
-    const filter = `(&(uid=${username})(userPassword=${password}))`;
+    // Escapar ANTES de interpoler en el filtro
+    const safeUser = this.escapeLdapFilter(username);
+    const safePass = this.escapeLdapFilter(password);
+    const filter = `(&(uid=${safeUser})(userPassword=${safePass}))`;
     const results = this.search(filter);
     return results.length > 0;
   }
